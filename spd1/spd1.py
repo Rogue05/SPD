@@ -39,14 +39,39 @@ avg_sortr = np.zeros(maxN)
 avg_przeg = np.zeros(maxN)
 
 num_of_iterations = 50
+max_t = 9
+
+def get_cost(N):
+    end = 0
+    t = 0
+    for nthproc in N:
+        t = max(t,nthproc.r)+nthproc.p
+        end = max(nthproc.q+t,end)
+    return end
+
+def sortR(N):
+    return sorted(N,key=lambda x:x.r)
+
+from copy import deepcopy
+
+def checkAll(N):
+    min_time = 10000000000
+    best_perm = N
+    for perm in permutations(N):
+        procs = list(perm)
+        new_min_time = get_cost(procs)
+        if new_min_time < min_time:
+            min_time = new_min_time
+            best_perm = procs
+    return deepcopy(best_perm)
+        
 
 for t in range(num_of_iterations):
+#    print('Iter',t)
     sortr = []
     przeg = []
     
-    for N in Ns: 
-    #    N = 5
-        max_t = 9
+    for N in Ns:
         procs = []
         
         for i in range(N):
@@ -56,14 +81,14 @@ for t in range(num_of_iterations):
                               int(random()*max_t)+1))
             
         
-        sortr_time = machine(*sorted(procs,key=lambda x:x.r)).run()
+        sortr_time = get_cost(procs)
         sortr.append(sortr_time)
         
-        min_time = (N+2)*max_t+1
-        for perm in permutations(procs):
-            procs = list(perm)
-            min_time = min(min_time,machine(*procs).run())
-            
+#        min_time = (N+2)*max_t+1
+#        for perm in permutations(procs):
+#            procs = list(perm)
+#            min_time = min(min_time,machine(*procs).run())
+        min_time = get_cost(checkAll(procs))
         przeg.append(min_time)
     
     avg_sortr = np.array(avg_sortr) + np.array(sortr)
@@ -71,5 +96,7 @@ for t in range(num_of_iterations):
     
     
 import matplotlib.pyplot as plt
+
 plt.plot(Ns,avg_sortr/num_of_iterations,Ns,avg_przeg/num_of_iterations)
+print((avg_sortr-avg_przeg)/np.array(Ns))
 
