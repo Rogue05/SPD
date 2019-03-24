@@ -70,6 +70,31 @@ def my_min(elem,new_order):
             
     return [*new_order[0:best_i],elem,*new_order[best_i:]]
     
+
+def my_remove_min(new_order):
+    min_cost = 100000000
+    t = [0]*len(new_order[0].p)
+    cached_t = deepcopy(t)
+    
+    best_order = []
+    elem = None
+    for i in range(len(new_order)):
+        tmp_order = [*new_order[:i],*new_order[i+1:]]
+#        tmp_t = deepcopy(cached_t)
+#        for j in range(i+1,len(new_order)):
+#            add_proc_to_time(tmp_t,new_order[j])
+#        cost = max(tmp_t)
+        cost = get_pipe_cost(tmp_order)
+        if cost<min_cost:
+            min_cost = cost
+            best_order = tmp_order
+            elem = new_order[i]
+            
+        add_proc_to_time(cached_t,new_order[i])
+            
+    return best_order,elem
+    
+
 def NEH(N,boost=True):
     new_order = []
 #    get_pipe_cost.clear_cache()
@@ -80,6 +105,8 @@ def NEH(N,boost=True):
         else:
 #            print('boosted')
             new_order = my_min(elem,new_order)
+            new_order,max_elem = my_remove_min(new_order)
+            new_order = my_min(max_elem,new_order)
         
     return new_order
     
@@ -129,7 +156,7 @@ for dataset in datasets:
 #    print('call')
     out.append(Dataset())
     start = time.time()
-    order = NEH(dataset.data,boost=False)
+    order = NEH(dataset.data,boost=True)
     out[-1].time= time.time() - start
 #    c = get_pipe_cost.cache
 #    order = []
@@ -139,18 +166,19 @@ for dataset in datasets:
     out[-1].mycost = get_pipe_cost(order)
     out[-1].datacost = dataset.cost
     out[-1].order = ' '.join([str(proc.uid) for proc in order])
+    lista = [proc.uid for proc in order]
     print(i,
           out[-1].time,
           get_pipe_cost(order),
           dataset.cost,
           '{:.2f}%'.format((out[-1].mycost-out[-1].datacost)*100/out[-1].datacost),
-#          [proc.uid for proc in order],
+          'len test:',len(lista)==len(set(lista)),
           )
     
 #    if i==10:
 #        break
 print('ok',ok)
-with open('normal.txt','w') as file:
+with open('improved_slow.txt','w') as file:
     for o in out:
         file.write(
                 str(o.uid)+';'+
